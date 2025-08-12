@@ -6,28 +6,6 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 screenGui.Name = "PlayerWatcherGui"
 
--- شاشة سوداء كاملة مع نص الترحيب
-local blackScreen = Instance.new("Frame")
-blackScreen.Size = UDim2.new(1, 0, 1, 0)
-blackScreen.Position = UDim2.new(0, 0, 0, 0)
-blackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
-blackScreen.Parent = screenGui
-
-local welcomeText = Instance.new("TextLabel")
-welcomeText.Size = UDim2.new(1, 0, 1, 0)
-welcomeText.BackgroundTransparency = 1
-welcomeText.TextColor3 = Color3.new(1, 1, 1)
-welcomeText.Text = "By Virus\nVirus_VRSl"
-welcomeText.TextScaled = true
-welcomeText.Font = Enum.Font.GothamBold
-welcomeText.TextWrapped = true
-welcomeText.Parent = blackScreen
-
--- ننتظر 3 ثواني قبل إزالة الشاشة السوداء
-delay(3, function()
-    blackScreen:Destroy()
-end)
-
 -- الإطار الرئيسي
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 250, 0, 320)
