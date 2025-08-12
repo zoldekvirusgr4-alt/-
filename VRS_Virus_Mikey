@@ -1,0 +1,197 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- إنشاء ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Name = "PlayerWatcherGui"
+
+-- شاشة سوداء كاملة مع نص الترحيب
+local blackScreen = Instance.new("Frame")
+blackScreen.Size = UDim2.new(1, 0, 1, 0)
+blackScreen.Position = UDim2.new(0, 0, 0, 0)
+blackScreen.BackgroundColor3 = Color3.new(0, 0, 0)
+blackScreen.Parent = screenGui
+
+local welcomeText = Instance.new("TextLabel")
+welcomeText.Size = UDim2.new(1, 0, 1, 0)
+welcomeText.BackgroundTransparency = 1
+welcomeText.TextColor3 = Color3.new(1, 1, 1)
+welcomeText.Text = "By Virus\nVirus_VRSl"
+welcomeText.TextScaled = true
+welcomeText.Font = Enum.Font.GothamBold
+welcomeText.TextWrapped = true
+welcomeText.Parent = blackScreen
+
+-- ننتظر 3 ثواني قبل إزالة الشاشة السوداء
+delay(3, function()
+    blackScreen:Destroy()
+end)
+
+-- الإطار الرئيسي
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -125, 0.4, -160)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.Parent = screenGui
+
+local mainUICorner = Instance.new("UICorner", mainFrame)
+mainUICorner.CornerRadius = UDim.new(0, 15)
+
+-- زر إغلاق دائري
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.BorderSizePixel = 0
+closeBtn.Parent = mainFrame
+
+local closeUICorner = Instance.new("UICorner", closeBtn)
+closeUICorner.CornerRadius = UDim.new(1, 0)
+
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- قائمة اللاعبين (ScrollingFrame)
+local playersFrame = Instance.new("ScrollingFrame")
+playersFrame.Size = UDim2.new(1, -20, 0, 220)
+playersFrame.Position = UDim2.new(0, 10, 0, 45)
+playersFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+playersFrame.BorderSizePixel = 0
+playersFrame.ScrollBarThickness = 5
+playersFrame.Parent = mainFrame
+
+local playersUICorner = Instance.new("UICorner", playersFrame)
+playersUICorner.CornerRadius = UDim.new(0, 12)
+
+-- زر تتبع اللاعب تحت قائمة اللاعبين
+local trackBtn = Instance.new("TextButton")
+trackBtn.Size = UDim2.new(1, -20, 0, 35)
+trackBtn.Position = UDim2.new(0, 10, 1, -40)
+trackBtn.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+trackBtn.BorderSizePixel = 0
+trackBtn.Text = "تتبع اللاعب المحدد"
+trackBtn.TextColor3 = Color3.new(1,1,1)
+trackBtn.Parent = mainFrame
+
+local trackUICorner = Instance.new("UICorner", trackBtn)
+trackUICorner.CornerRadius = UDim.new(0, 10)
+
+-- Frame للإشعارات الجانبي (يسار)
+local sideFrame = Instance.new("Frame")
+sideFrame.Size = UDim2.new(0, 250, 0, 220)
+sideFrame.Position = UDim2.new(0, 10, 0.35, 0)
+sideFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+sideFrame.BorderSizePixel = 0
+sideFrame.Visible = false
+sideFrame.Active = true
+sideFrame.Draggable = true
+sideFrame.Parent = screenGui
+
+local sideUICorner = Instance.new("UICorner", sideFrame)
+sideUICorner.CornerRadius = UDim.new(0, 15)
+
+-- عنوان الإشعارات
+local notifTitle = Instance.new("TextLabel")
+notifTitle.Size = UDim2.new(1, 0, 0, 35)
+notifTitle.BackgroundTransparency = 1
+notifTitle.Text = "مراقبة اللاعب"
+notifTitle.Font = Enum.Font.ArialBold
+notifTitle.TextColor3 = Color3.new(1,1,1)
+notifTitle.TextScaled = true
+notifTitle.Parent = sideFrame
+
+-- ScrollFrame لرسائل الدخول والخروج
+local notifList = Instance.new("ScrollingFrame")
+notifList.Size = UDim2.new(1, -20, 1, -45)
+notifList.Position = UDim2.new(0, 10, 0, 40)
+notifList.BackgroundTransparency = 1
+notifList.BorderSizePixel = 0
+notifList.ScrollBarThickness = 6
+notifList.Parent = sideFrame
+
+-- متغيرات
+local selectedPlayerName = nil
+
+-- تحديث قائمة اللاعبين
+local function refreshPlayers()
+    playersFrame:ClearAllChildren()
+    local yPos = 0
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.Position = UDim2.new(0, 0, 0, yPos)
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        btn.BorderSizePixel = 0
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.Text = plr.Name
+        btn.Parent = playersFrame
+
+        local btnCorner = Instance.new("UICorner", btn)
+        btnCorner.CornerRadius = UDim.new(0, 8)
+
+        btn.MouseButton1Click:Connect(function()
+            selectedPlayerName = plr.Name
+            -- تميز الزر المحدد بلون مختلف
+            for _, otherBtn in pairs(playersFrame:GetChildren()) do
+                if otherBtn:IsA("TextButton") then
+                    otherBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                end
+            end
+            btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        end)
+
+        yPos += 35
+    end
+    playersFrame.CanvasSize = UDim2.new(0, 0, 0, yPos)
+end
+
+refreshPlayers()
+
+Players.PlayerAdded:Connect(refreshPlayers)
+Players.PlayerRemoving:Connect(refreshPlayers)
+
+-- دالة لإضافة رسالة للإشعارات
+local function addNotification(text, color)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 25)
+    label.Position = UDim2.new(0, 0, 0, notifList.CanvasSize.Y.Offset)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = color or Color3.new(1,1,1)
+    label.Text = text
+    label.TextScaled = true
+    label.TextWrapped = true
+    label.Parent = notifList
+
+    notifList.CanvasSize = UDim2.new(0, 0, 0, notifList.CanvasSize.Y.Offset + 30)
+end
+
+-- زر تتبع اللاعب المحدد
+trackBtn.MouseButton1Click:Connect(function()
+    if selectedPlayerName then
+        sideFrame.Visible = true
+        addNotification("بدأت مراقبة اللاعب: "..selectedPlayerName, Color3.fromRGB(255, 255, 0))
+    else
+        addNotification("لم يتم اختيار لاعب", Color3.fromRGB(255, 0, 0))
+    end
+end)
+
+-- مراقبة دخول وخروج اللاعب
+Players.PlayerAdded:Connect(function(plr)
+    if plr.Name == selectedPlayerName and sideFrame.Visible then
+        addNotification(plr.Name.." دخل السيرفر", Color3.fromRGB(0, 255, 0))
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if plr.Name == selectedPlayerName and sideFrame.Visible then
+        addNotification(plr.Name.." خرج من السيرفر", Color3.fromRGB(255, 0, 0))
+    end
+end)
