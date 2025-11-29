@@ -1,0 +1,182 @@
+-- تحميل مكتبة Orion
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jensonhirst/Orion/main/source'))()
+
+-- إنشاء نافذة
+local Window = OrionLib:MakeWindow({
+	Name = "Astrot Virus Script - كامل",
+	HidePremium = false,
+	SaveConfig = true,
+	ConfigFolder = "AstrotFull"
+})
+
+-- =======================
+-- تبويب حذف أشياء
+-- =======================
+local MainTab = Window:MakeTab({
+	Name = "حذف أشياء",
+	Icon = "rbxassetid://4483345998"
+})
+
+-- حذف لوحة
+MainTab:AddButton({
+	Name = "حذف لوحة",
+	Callback = function()
+		local children = workspace.Model:GetChildren()
+		if children[1045] then children[1045]:Destroy() end
+		if children[1044] then children[1044]:Destroy() end
+	end
+})
+
+-- حذف أزرار الملابس
+MainTab:AddButton({
+	Name = "حذف أزرار الملابس",
+	Callback = function()
+		local schoolMorphs = workspace.Model["School Morphs"]
+		if schoolMorphs["\216\167\217\132\216\167\216\168\216\170\216\175\216\167\216\166\217\138"] and schoolMorphs["\216\167\217\132\216\167\216\168\216\170\216\175\216\167\216\166\217\138"].Button then
+			schoolMorphs["\216\167\217\132\216\167\216\168\216\170\216\175\216\167\216\166\217\138"].Button:Destroy()
+		end
+		if schoolMorphs.Girl.Button then schoolMorphs.Girl.Button:Destroy() end
+		if schoolMorphs.Boy.Button then schoolMorphs.Boy.Button:Destroy() end
+	end
+})
+
+-- حذف البوابات
+MainTab:AddButton({
+	Name = "حذف البوابات",
+	Callback = function()
+		if workspace.Frawst2.Telepad then workspace.Frawst2.Telepad:Destroy() end
+		if workspace.Frawst2.Model.iexistforlooks then workspace.Frawst2.Model.iexistforlooks:Destroy() end
+		if workspace.Frawst1.Telepad2 then workspace.Frawst1.Telepad2:Destroy() end
+		if workspace.Frawst1.Model.iexistforlooks then workspace.Frawst1.Model.iexistforlooks:Destroy() end
+	end
+})
+
+-- =======================
+-- تبويب تحديد لاعب / AST
+-- =======================
+local PlayerTab = Window:MakeTab({
+	Name = "تحديد لاعب",
+	Icon = "rbxassetid://4483345998"
+})
+
+-- متغيرات
+local PlayerNameInput = ""
+local ASTActive = false
+local ASTConnection
+local MAX_SUDDEN_CHANGE = 100
+
+-- Textbox لاختيار اللاعب
+PlayerTab:AddTextbox({
+	Name = "ادخل اسم اللاعب",
+	Default = "",
+	TextDisappear = false,
+	Callback = function(v)
+		PlayerNameInput = v
+	end
+})
+
+-- Teleport للاعب
+PlayerTab:AddButton({
+	Name = "Teleport للاعب",
+	Callback = function()
+		if PlayerNameInput ~= "" then
+			local tp
+			for _, p in pairs(game.Players:GetPlayers()) do
+				if string.find(p.Name:lower(), PlayerNameInput:lower()) then tp = p break end
+			end
+			local lp = game.Players.LocalPlayer
+			if tp and tp.Character and tp.Character:FindFirstChild("HumanoidRootPart") and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+				lp.Character.HumanoidRootPart.CFrame = tp.Character.HumanoidRootPart.CFrame
+			end
+		end
+	end
+})
+
+-- ESP للاعب
+local ESPEnabled = false
+local CurrentESP
+PlayerTab:AddButton({
+	Name = "ESP للاعب",
+	Callback = function()
+		if PlayerNameInput ~= "" then
+			local tp
+			for _, p in pairs(game.Players:GetPlayers()) do
+				if string.find(p.Name:lower(), PlayerNameInput:lower()) then tp = p break end
+			end
+			if tp and tp.Character then
+				if not ESPEnabled then
+					local h = Instance.new("Highlight")
+					h.Adornee = tp.Character
+					h.FillColor = Color3.fromRGB(255, 0, 0)
+					h.OutlineColor = Color3.fromRGB(255, 255, 255)
+					h.Parent = tp.Character
+					CurrentESP = h
+					ESPEnabled = true
+				else
+					if CurrentESP then CurrentESP:Destroy(); CurrentESP = nil end
+					ESPEnabled = false
+				end
+			end
+		end
+	end
+})
+
+-- AST: الالتصاق بصدر اللاعب المستهدف + دوران عامودي + تجميد عند الحركة المفاجئة + هبوط سلس على القدمين عند الإيقاف
+PlayerTab:AddButton({
+	Name = "AST",
+	Callback = function()
+		if PlayerNameInput ~= "" then
+			local tp
+			local lp = game.Players.LocalPlayer
+			for _, p in pairs(game.Players:GetPlayers()) do
+				if string.find(p.Name:lower(), PlayerNameInput:lower()) then tp = p break end
+			end
+
+			if tp and tp.Character and tp.Character:FindFirstChild("HumanoidRootPart") and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+				local lpRoot = lp.Character.HumanoidRootPart
+				local tpRoot = tp.Character.HumanoidRootPart
+				local lastPos = tpRoot.Position
+				local angleZ = 0
+
+				if not ASTActive then
+					ASTActive = true
+					ASTConnection = game:GetService("RunService").RenderStepped:Connect(function()
+						if not lpRoot or not tpRoot then return end
+						local currentPos = tpRoot.Position
+						local dx = math.abs(currentPos.X - lastPos.X)
+						local dy = math.abs(currentPos.Y - lastPos.Y)
+						local dz = math.abs(currentPos.Z - lastPos.Z)
+
+						-- تجميد كامل عند الحركة المفاجئة
+						if dx > MAX_SUDDEN_CHANGE or dy > MAX_SUDDEN_CHANGE or dz > MAX_SUDDEN_CHANGE then
+							return
+						end
+
+						-- الالتصاق بصدر اللاعب المستهدف
+						lpRoot.CFrame = CFrame.new(currentPos)
+
+						-- دوران عامودي حول نفسه
+						angleZ = angleZ + math.rad(10) -- سرعة متوسطة
+						lpRoot.CFrame = lpRoot.CFrame * CFrame.Angles(0, 0, angleZ)
+
+						lastPos = currentPos
+					end)
+				else
+					-- إيقاف AST بهدوء، وضعية وقوف على القدمين
+					ASTActive = false
+					if ASTConnection then ASTConnection:Disconnect() ASTConnection = nil end
+					if lpRoot and lp.Character and lp.Character:FindFirstChild("Humanoid") then
+						local currentCFrame = lpRoot.CFrame
+						local humanoid = lp.Character.Humanoid
+						humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+						lpRoot.CFrame = CFrame.new(currentCFrame.Position.X, currentCFrame.Position.Y, currentCFrame.Position.Z)
+						humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) -- ثابت على القدمين
+					end
+				end
+			end
+		end
+	end
+})
+
+-- تفعيل الواجهة
+OrionLib:Init()
