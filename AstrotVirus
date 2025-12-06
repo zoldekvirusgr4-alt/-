@@ -1,101 +1,99 @@
 -- Orion Library
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/jensonhirst/Orion/main/source"))()
 
+-- Services
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local LocalPlayer=Players.LocalPlayer
+
 -- Window
 local Window = OrionLib:MakeWindow({
-	Name = "Astrot",
-	SaveConfig = true,
-	ConfigFolder = "AstrotConfig",
-	IntroEnabled = true,
-	IntroText = "Astrot Script"
+	Name="Astrot",
+	SaveConfig=true,
+	ConfigFolder="AstrotConfig",
+	IntroEnabled=true,
+	IntroText="Astrot Script"
 })
 
--- Tabs
-local Tab_Taf3eel = Window:MakeTab({Name="تفعيل", Icon="rbxassetid://4483345998"})
-local Tab_Hathf   = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBnas = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBnafsak = Window:MakeTab({Name="تحكم بنفسك", Icon="rbxassetid://4483345998"})
-local Tab_Intiqal = Window:MakeTab({Name="انتقال", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBlAdawat = Window:MakeTab({Name="تحكم بل ادوات", Icon="rbxassetid://4483345998"})
-local Tab_Info    = Window:MakeTab({Name="معلومات", Icon="rbxassetid://4483345998"})
+-- Tabs (كلها)
+local Tab_Taf3eel   = Window:MakeTab({Name="تفعيل", Icon="rbxassetid://4483345998"})
+local Tab_Hathf     = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
+local Tab_ControlP  = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
+local Tab_ControlS  = Window:MakeTab({Name="تحكم بنفسك", Icon="rbxassetid://4483345998"})
+local Tab_Intiqal   = Window:MakeTab({Name="انتقال", Icon="rbxassetid://4483345998"})
+local Tab_Tools     = Window:MakeTab({Name="تحكم بل ادوات", Icon="rbxassetid://4483345998"})
+local Tab_Info      = Window:MakeTab({Name="معلومات", Icon="rbxassetid://4483345998"})
 
 ----------------------------------------------------------------
--- حذف اشياء
+-- متغيرات عامة
 ----------------------------------------------------------------
-Tab_Hathf:AddButton({Name="حذف الملابس", Callback=function() print("حذف الملابس") end})
-Tab_Hathf:AddButton({Name="حذف البوابات", Callback=function() print("حذف البوابات") end})
+local SelectedPlayer=nil
 
-----------------------------------------------------------------
--- انتقال
-----------------------------------------------------------------
-local function TeleportTo(x,y,z)
-	local lp = game.Players.LocalPlayer
-	if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-		lp.Character.HumanoidRootPart.CFrame = CFrame.new(x,y,z)
-	end
-end
-
-Tab_Intiqal:AddButton({Name="المدرسه دور الاول", Callback=function()TeleportTo(-641.74,-8.55,615.86)end})
-Tab_Intiqal:AddButton({Name="المدرسه دور ثاني", Callback=function()TeleportTo(-645.30,13.09,601.69)end})
-Tab_Intiqal:AddButton({Name="سطح المدرسه", Callback=function()TeleportTo(-659.53,30.75,604.97)end})
-Tab_Intiqal:AddButton({Name="البدايه", Callback=function()TeleportTo(-699.09,-8.66,547.47)end})
-Tab_Intiqal:AddButton({Name="البيت", Callback=function()TeleportTo(-1222.30,-8.13,309.16)end})
-Tab_Intiqal:AddButton({Name="غرفه البيت الخارجيه", Callback=function()TeleportTo(-1274.60,-7.91,271.95)end})
-Tab_Intiqal:AddButton({Name="البيت دور الاول", Callback=function()TeleportTo(-1192.90,-4.11,265.13)end})
-Tab_Intiqal:AddButton({Name="البيت دور ثاني", Callback=function()TeleportTo(-1181.42,18.87,246.97)end})
-Tab_Intiqal:AddButton({Name="سطح البيت", Callback=function()TeleportTo(-1198.68,47.04,260.32)end})
-Tab_Intiqal:AddButton({Name="ورا البيت", Callback=function()TeleportTo(-1201.88,-7.93,204.98)end})
-Tab_Intiqal:AddButton({Name="قدام لوحه وقت لاعبين", Callback=function()TeleportTo(-619.49,-9.08,485.11)end})
-
-----------------------------------------------------------------
--- اختيار لاعب بالاسم الجزئي
-----------------------------------------------------------------
-local SelectedPlayer = nil
 local function FindByPartial(name)
-	name = name:lower()
-	for _,p in pairs(game.Players:GetPlayers()) do
-		if p.Name:lower():sub(1,#name)==name then return p end
+	name=name:lower()
+	for _,p in pairs(Players:GetPlayers()) do
+		if p.Name:lower():sub(1,#name)==name then
+			return p
+		end
 	end
 end
 
+----------------------------------------------------------------
+-- تفعيل | اختيار لاعب
+----------------------------------------------------------------
 Tab_Taf3eel:AddTextbox({
 	Name="اسم اللاعب",
 	TextDisappear=true,
 	Callback=function(v)
-		local p = FindByPartial(v)
+		local p=FindByPartial(v)
 		if p then
-			SelectedPlayer = p
-			OrionLib:MakeNotification({Name="تم التحديد",Content=p.Name,Time=3})
+			SelectedPlayer=p
+			OrionLib:MakeNotification({Name="تم التحديد",Content=p.Name,Time=2})
 		end
 	end
 })
 
 ----------------------------------------------------------------
--- Toggle أزرار في تبويب تفعيل
-----------------------------------------------------------------
-local RunService = game:GetService("RunService")
-
 -- ESP Toggle
+----------------------------------------------------------------
+local ESPOn=false
 local ESP=nil
 Tab_Taf3eel:AddToggle({
 	Name="ESP",
 	Default=false,
 	Callback=function(on)
-		if not SelectedPlayer or not SelectedPlayer.Character then return end
-		if on then
-			ESP = Instance.new("Highlight")
-			ESP.FillColor = Color3.fromRGB(255,0,0)
-			ESP.OutlineColor = Color3.fromRGB(255,255,255)
-			ESP.FillTransparency = 0.5
-			ESP.Adornee = SelectedPlayer.Character
-			ESP.Parent = game.CoreGui
-		else
-			if ESP then ESP:Destroy() end
+		ESPOn=on
+		if ESP then ESP:Destroy() ESP=nil end
+		if on and SelectedPlayer and SelectedPlayer.Character then
+			ESP=Instance.new("Highlight")
+			ESP.FillColor=Color3.fromRGB(255,0,0)
+			ESP.OutlineColor=Color3.fromRGB(255,255,255)
+			ESP.FillTransparency=0.5
+			ESP.Adornee=SelectedPlayer.Character
+			ESP.Parent=game.CoreGui
 		end
 	end
 })
 
+----------------------------------------------------------------
+-- Teleport (زر عادي)
+----------------------------------------------------------------
+Tab_Taf3eel:AddButton({
+	Name="Teleport",
+	Callback=function()
+		if not SelectedPlayer or not SelectedPlayer.Character then return end
+		local hrp=SelectedPlayer.Character:FindFirstChild("HumanoidRootPart")
+		local my=LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if hrp and my then
+			my.CFrame=hrp.CFrame*CFrame.new(0,0,-3)
+		end
+	end
+})
+
+----------------------------------------------------------------
 -- View Toggle
+----------------------------------------------------------------
+local ViewOn=false
 local Cam=workspace.CurrentCamera
 local OldSubject=nil
 Tab_Taf3eel:AddToggle({
@@ -109,75 +107,91 @@ Tab_Taf3eel:AddToggle({
 			OldSubject=Cam.CameraSubject
 			Cam.CameraSubject=hum
 		else
-			Cam.CameraSubject=OldSubject
+			if OldSubject then Cam.CameraSubject=OldSubject end
 		end
 	end
 })
 
 ----------------------------------------------------------------
--- AST Toggle | خلف ظهر اللاعب المحدد
+-- AST Toggle (محلي فقط)
+-- خلف ظهر اللاعب المحدد + حركة امام/ورا سريعة
+-- Massless / بدون جاذبية
 ----------------------------------------------------------------
 local ASTConn=nil
+local OldPlatform=false
+
 Tab_Taf3eel:AddToggle({
 	Name="AST",
 	Default=false,
 	Callback=function(on)
-		local lp=game.Players.LocalPlayer
+		local char=LocalPlayer.Character
+		if not char then return end
+		local hum=char:FindFirstChildOfClass("Humanoid")
+		local hrp=char:FindFirstChild("HumanoidRootPart")
+
 		if ASTConn then
 			ASTConn:Disconnect()
 			ASTConn=nil
-			if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-				lp.Character.Humanoid.PlatformStand=false
-			end
+			if hum then hum.PlatformStand=OldPlatform end
 		end
 		if not on then return end
-		if not SelectedPlayer or not SelectedPlayer.Character or not lp.Character then return end
+		if not SelectedPlayer or not SelectedPlayer.Character then return end
 
-		local tHRP=SelectedPlayer.Character:WaitForChild("HumanoidRootPart")
-		local lHRP=lp.Character:WaitForChild("HumanoidRootPart")
-		local lHum = lp.Character:WaitForChild("Humanoid")
+		local tHRP=SelectedPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if not tHRP or not hrp or not hum then return end
 
-		lHum.PlatformStand=true -- تعطيل الجاذبية
+		OldPlatform=hum.PlatformStand
+		hum.PlatformStand=true -- Massless
 
-		local speed = 20 -- سرعة حركة أمام/خلف
-		local distance = 5 -- مسافة الحركة أمام/خلف
+		local backOffset=2       -- لزق بالظهر
+		local swingDist=5        -- امام / ورا
+		local speed=20           -- سرعة عالية
 
-		ASTConn = RunService.RenderStepped:Connect(function(dt)
-			if not tHRP or not lHRP then return end
+		ASTConn=RunService.RenderStepped:Connect(function(dt)
+			if not tHRP or not hrp then return end
 
-			-- اتجاه نظر اللاعب المحدد
-			local lookDir = Vector3.new(tHRP.CFrame.LookVector.X, 0, tHRP.CFrame.LookVector.Z).Unit
+			local look=Vector3.new(tHRP.CFrame.LookVector.X,0,tHRP.CFrame.LookVector.Z)
+			if look.Magnitude==0 then return end
+			look=look.Unit
 
-			-- موضع خلف ظهر اللاعب المحدد
-			local backPos = tHRP.Position - lookDir * 3
+			local basePos=tHRP.Position - look*backOffset
+			local swing=math.sin(tick()*speed)*swingDist
 
-			-- حركة أمام/خلف على محور النظر
-			local move = math.sin(tick()*speed) * distance * dt
-			lHRP.CFrame = CFrame.new(backPos + lookDir * move, backPos + lookDir)
-
-			-- تدوير اللاعب المحلي حسب اتجاه نظر اللاعب المحدد
-			local pos = lHRP.Position
-			lHRP.CFrame = CFrame.new(pos, pos + lookDir)
+			local finalPos=basePos + look*swing
+			hrp.CFrame=CFrame.new(finalPos, finalPos + look)
 		end)
 	end
 })
 
 ----------------------------------------------------------------
--- Teleport للاعب المحدد (زر عادي)
+-- حذف اشياء
 ----------------------------------------------------------------
-Tab_Taf3eel:AddButton({
-	Name="Teleport",
-	Callback=function()
-		local lp=game.Players.LocalPlayer
-		if SelectedPlayer and lp.Character and SelectedPlayer.Character then
-			local hrp=SelectedPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then lp.Character.HumanoidRootPart.CFrame = hrp.CFrame*CFrame.new(0,0,-3) end
-		end
-	end
-})
+Tab_Hathf:AddButton({Name="حذف الملابس", Callback=function() print("حذف الملابس") end})
+Tab_Hathf:AddButton({Name="حذف البوابات", Callback=function() print("حذف البوابات") end})
 
 ----------------------------------------------------------------
--- معلومات
+-- انتقال
+----------------------------------------------------------------
+local function TP(x,y,z)
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(x,y,z)
+	end
+end
+
+Tab_Intiqal:AddButton({Name="المدرسه دور الاول", Callback=function()TP(-641.74,-8.55,615.86)end})
+Tab_Intiqal:AddButton({Name="المدرسه دور ثاني", Callback=function()TP(-645.30,13.09,601.69)end})
+Tab_Intiqal:AddButton({Name="سطح المدرسه", Callback=function()TP(-659.53,30.75,604.97)end})
+Tab_Intiqal:AddButton({Name="البدايه", Callback=function()TP(-699.09,-8.66,547.47)end})
+Tab_Intiqal:AddButton({Name="البيت", Callback=function()TP(-1222.30,-8.13,309.16)end})
+Tab_Intiqal:AddButton({Name="غرفه البيت الخارجيه", Callback=function()TP(-1274.60,-7.91,271.95)end})
+Tab_Intiqal:AddButton({Name="البيت دور الاول", Callback=function()TP(-1192.90,-4.11,265.13)end})
+Tab_Intiqal:AddButton({Name="البيت دور ثاني", Callback=function()TP(-1181.42,18.87,246.97)end})
+Tab_Intiqal:AddButton({Name="سطح البيت", Callback=function()TP(-1198.68,47.04,260.32)end})
+Tab_Intiqal:AddButton({Name="ورا البيت", Callback=function()TP(-1201.88,-7.93,204.98)end})
+Tab_Intiqal:AddButton({Name="قدام لوحه وقت لاعبين", Callback=function()TP(-619.49,-9.08,485.11)end})
+
+----------------------------------------------------------------
+-- معلومات (نفس الشكل)
 ----------------------------------------------------------------
 Tab_Info:AddLabel("Astrot Script")
 Tab_Info:AddLabel("مهم !!! : سكربت ما يضبط على مابات ثانيه")
