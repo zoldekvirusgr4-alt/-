@@ -76,7 +76,6 @@ Tab_Taf3eel:AddTextbox({
 local RunService = game:GetService("RunService")
 
 -- ESP Toggle
-local ESPOn=false
 local ESP=nil
 Tab_Taf3eel:AddToggle({
 	Name="ESP",
@@ -90,10 +89,8 @@ Tab_Taf3eel:AddToggle({
 			ESP.FillTransparency = 0.5
 			ESP.Adornee = SelectedPlayer.Character
 			ESP.Parent = game.CoreGui
-			ESPOn=true
 		else
 			if ESP then ESP:Destroy() end
-			ESPOn=false
 		end
 	end
 })
@@ -101,7 +98,6 @@ Tab_Taf3eel:AddToggle({
 -- View Toggle
 local Cam=workspace.CurrentCamera
 local OldSubject=nil
-local ViewOn=false
 Tab_Taf3eel:AddToggle({
 	Name="View",
 	Default=false,
@@ -112,16 +108,14 @@ Tab_Taf3eel:AddToggle({
 		if on then
 			OldSubject=Cam.CameraSubject
 			Cam.CameraSubject=hum
-			ViewOn=true
 		else
 			Cam.CameraSubject=OldSubject
-			ViewOn=false
 		end
 	end
 })
 
 ----------------------------------------------------------------
--- AST Toggle المصحح
+-- AST Toggle | خلف ظهر اللاعب المحدد
 ----------------------------------------------------------------
 local ASTConn=nil
 Tab_Taf3eel:AddToggle({
@@ -132,7 +126,6 @@ Tab_Taf3eel:AddToggle({
 		if ASTConn then
 			ASTConn:Disconnect()
 			ASTConn=nil
-			-- إعادة الجاذبية لللاعب المحلي
 			if lp.Character and lp.Character:FindFirstChild("Humanoid") then
 				lp.Character.Humanoid.PlatformStand=false
 			end
@@ -144,23 +137,25 @@ Tab_Taf3eel:AddToggle({
 		local lHRP=lp.Character:WaitForChild("HumanoidRootPart")
 		local lHum = lp.Character:WaitForChild("Humanoid")
 
-		-- تعطيل الجاذبية على اللاعب المحلي
-		lHum.PlatformStand=true
+		lHum.PlatformStand=true -- تعطيل الجاذبية
 
 		local speed = 20 -- سرعة حركة أمام/خلف
-		local distance = 5 -- مسافة الحركة
+		local distance = 5 -- مسافة الحركة أمام/خلف
 
 		ASTConn = RunService.RenderStepped:Connect(function(dt)
 			if not tHRP or not lHRP then return end
 
-			-- اتجاه النظر للاعب المحدد
+			-- اتجاه نظر اللاعب المحدد
 			local lookDir = Vector3.new(tHRP.CFrame.LookVector.X, 0, tHRP.CFrame.LookVector.Z).Unit
 
-			-- تحريك اللاعب المحلي للأمام/الخلف على محور النظر
-			local move = math.sin(tick()*speed) * distance * dt
-			lHRP.CFrame = CFrame.new(lHRP.Position + lookDir * move, lHRP.Position + lookDir)
+			-- موضع خلف ظهر اللاعب المحدد
+			local backPos = tHRP.Position - lookDir * 3
 
-			-- تعديل دوران اللاعب المحلي ليكون بنفس اتجاه نظر اللاعب المحدد
+			-- حركة أمام/خلف على محور النظر
+			local move = math.sin(tick()*speed) * distance * dt
+			lHRP.CFrame = CFrame.new(backPos + lookDir * move, backPos + lookDir)
+
+			-- تدوير اللاعب المحلي حسب اتجاه نظر اللاعب المحدد
 			local pos = lHRP.Position
 			lHRP.CFrame = CFrame.new(pos, pos + lookDir)
 		end)
