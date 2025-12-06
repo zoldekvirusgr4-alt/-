@@ -10,14 +10,14 @@ local Window = OrionLib:MakeWindow({
 	IntroText = "Astrot Script"
 })
 
--- Tabs الأصلية المطلوبة
+-- Tabs
 local Tab_Taf3eel = Window:MakeTab({Name="تفعيل", Icon="rbxassetid://4483345998"})
-local Tab_Hathf   = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBnas = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBnafsak = Window:MakeTab({Name="تحكم بنفسك", Icon="rbxassetid://4483345998"})
+local Tab_Hathf = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
+local Tab_TBN = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
+local Tab_TBF = Window:MakeTab({Name="تحكم بنفسك", Icon="rbxassetid://4483345998"})
 local Tab_Intiqal = Window:MakeTab({Name="انتقال", Icon="rbxassetid://4483345998"})
-local Tab_TahakomBlAdawat = Window:MakeTab({Name="تحكم بل ادوات", Icon="rbxassetid://4483345998"})
-local Tab_Info    = Window:MakeTab({Name="معلومات", Icon="rbxassetid://4483345998"})
+local Tab_TBA = Window:MakeTab({Name="تحكم بل ادوات", Icon="rbxassetid://4483345998"})
+local Tab_Info = Window:MakeTab({Name="معلومات", Icon="rbxassetid://4483345998"})
 
 ----------------------------------------------------------------
 -- حذف اشياء
@@ -30,8 +30,9 @@ Tab_Hathf:AddButton({Name="حذف البوابات", Callback=function() print("
 ----------------------------------------------------------------
 local function TeleportTo(x,y,z)
 	local lp = game.Players.LocalPlayer
-	if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
-		lp.Character.HumanoidRootPart.CFrame = CFrame.new(x,y,z)
+	local c = lp.Character
+	if c and c:FindFirstChild("HumanoidRootPart") then
+		c.HumanoidRootPart.CFrame = CFrame.new(x,y,z)
 	end
 end
 
@@ -50,11 +51,16 @@ Tab_Intiqal:AddButton({Name="قدام لوحه وقت لاعبين", Callback=fu
 ----------------------------------------------------------------
 -- اختيار لاعب بالاسم الجزئي
 ----------------------------------------------------------------
-local SelectedPlayer = nil
-local function FindByPartial(name)
-	name = name:lower()
-	for _,p in pairs(game.Players:GetPlayers()) do
-		if p.Name:lower():sub(1,#name)==name then return p end
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local SelectedPlayer
+
+local function FindByPartial(text)
+	text = text:lower()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p.Name:lower():sub(1,#text) == text then
+			return p
+		end
 	end
 end
 
@@ -65,19 +71,15 @@ Tab_Taf3eel:AddTextbox({
 		local p = FindByPartial(v)
 		if p then
 			SelectedPlayer = p
-			OrionLib:MakeNotification({Name="تم التحديد",Content=p.Name,Time=3})
+			OrionLib:MakeNotification({Name="تم التحديد",Content=p.Name,Time=2})
 		end
 	end
 })
 
 ----------------------------------------------------------------
--- Toggle أزرار في تبويب تفعيل
-----------------------------------------------------------------
-local RunService = game:GetService("RunService")
-
 -- ESP Toggle
-local ESPOn=false
-local ESP=nil
+----------------------------------------------------------------
+local ESP
 Tab_Taf3eel:AddToggle({
 	Name="ESP",
 	Default=false,
@@ -90,70 +92,85 @@ Tab_Taf3eel:AddToggle({
 			ESP.FillTransparency = 0.5
 			ESP.Adornee = SelectedPlayer.Character
 			ESP.Parent = game.CoreGui
-			ESPOn=true
 		else
-			if ESP then ESP:Destroy() end
-			ESPOn=false
+			if ESP then ESP:Destroy() ESP=nil end
 		end
 	end
 })
 
+----------------------------------------------------------------
 -- View Toggle
-local Cam=workspace.CurrentCamera
-local OldSubject=nil
-local ViewOn=false
+----------------------------------------------------------------
+local Cam = workspace.CurrentCamera
+local OldSubject
 Tab_Taf3eel:AddToggle({
 	Name="View",
 	Default=false,
 	Callback=function(on)
 		if not SelectedPlayer or not SelectedPlayer.Character then return end
-		local hum=SelectedPlayer.Character:FindFirstChildOfClass("Humanoid")
+		local hum = SelectedPlayer.Character:FindFirstChildOfClass("Humanoid")
 		if not hum then return end
 		if on then
-			OldSubject=Cam.CameraSubject
-			Cam.CameraSubject=hum
-			ViewOn=true
+			OldSubject = Cam.CameraSubject
+			Cam.CameraSubject = hum
 		else
-			Cam.CameraSubject=OldSubject
-			ViewOn=false
+			Cam.CameraSubject = OldSubject
 		end
 	end
 })
 
--- AST Toggle
-local ASTConn=nil
-Tab_Taf3eel:AddToggle({
-	Name="AST",
-	Default=false,
-	Callback=function(on)
-		if ASTConn then ASTConn:Disconnect(); ASTConn=nil end
-		if not on then return end
-		local lp=game.Players.LocalPlayer
-		if not SelectedPlayer or not SelectedPlayer.Character or not lp.Character then return end
-		local tHRP=SelectedPlayer.Character:WaitForChild("HumanoidRootPart")
-		local lHRP=lp.Character:WaitForChild("HumanoidRootPart")
-		ASTConn=RunService.RenderStepped:Connect(function(dt)
-			if not tHRP or not lHRP then return end
-			local back=2
-			local desired = tHRP.Position - tHRP.CFrame.LookVector*back
-			lHRP.CFrame = CFrame.lookAt(desired, desired + tHRP.CFrame.LookVector)
-			local s = math.sin(tick()*5)
-			tHRP.CFrame = tHRP.CFrame * CFrame.new(0,0,s*10*dt)
-		end)
-	end
-})
-
 ----------------------------------------------------------------
--- Teleport للاعب المحدد (زر عادي)
+-- Teleport Button
 ----------------------------------------------------------------
 Tab_Taf3eel:AddButton({
 	Name="Teleport",
 	Callback=function()
-		local lp=game.Players.LocalPlayer
-		if SelectedPlayer and lp.Character and SelectedPlayer.Character then
-			local hrp=SelectedPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if hrp then lp.Character.HumanoidRootPart.CFrame = hrp.CFrame*CFrame.new(0,0,-3) end
+		local lp = Players.LocalPlayer
+		if SelectedPlayer and SelectedPlayer.Character and lp.Character then
+			local hrp = SelectedPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				lp.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0,0,-3)
+			end
 		end
+	end
+})
+
+----------------------------------------------------------------
+-- AST Toggle (محلي فقط)
+----------------------------------------------------------------
+local ASTConn
+Tab_Taf3eel:AddToggle({
+	Name="AST",
+	Default=false,
+	Callback=function(on)
+		local lp = Players.LocalPlayer
+		local char = lp.Character
+		if ASTConn then
+			ASTConn:Disconnect()
+			ASTConn = nil
+			if char and char:FindFirstChild("Humanoid") then
+				char.Humanoid.PlatformStand = false
+			end
+		end
+		if not on then return end
+		if not SelectedPlayer or not SelectedPlayer.Character or not char then return end
+
+		local lHRP = char:WaitForChild("HumanoidRootPart")
+		local lHum = char:WaitForChild("Humanoid")
+		local tHRP = SelectedPlayer.Character:WaitForChild("HumanoidRootPart")
+
+		lHum.PlatformStand = true -- بدون جاذبية
+
+		local speed = 30      -- سرعة أعلى
+		local amplitude = 6   -- مدى الحركة
+
+		ASTConn = RunService.RenderStepped:Connect(function(dt)
+			if not lHRP or not tHRP then return end
+			local look = tHRP.CFrame.LookVector
+			local move = math.sin(tick()*speed) * amplitude * dt
+			local pos = lHRP.Position + Vector3.new(look.X,0,look.Z) * move
+			lHRP.CFrame = CFrame.new(pos, pos + Vector3.new(look.X,0,look.Z))
+		end)
 	end
 })
 
