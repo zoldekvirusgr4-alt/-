@@ -13,7 +13,10 @@ local Window = OrionLib:MakeWindow({
 -- Tabs
 local Tab_Taf3eel = Window:MakeTab({Name="تفعيل", Icon="rbxassetid://4483345998"})
 local Tab_Hathf   = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
+local Tab_TahakomBnas = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
+local Tab_TahakomBnafsak = Window:MakeTab({Name="تحكم بنفسك", Icon="rbxassetid://4483345998"})
 local Tab_Intiqal = Window:MakeTab({Name="انتقال", Icon="rbxassetid://4483345998"})
+local Tab_TahakomBlAdawat = Window:MakeTab({Name="تحكم بل ادوات", Icon="rbxassetid://4483345998"})
 local Tab_Info    = Window:MakeTab({Name="معلومات", Icon="rbxassetid://4483345998"})
 
 ----------------------------------------------------------------
@@ -68,7 +71,7 @@ Tab_Taf3eel:AddTextbox({
 })
 
 ----------------------------------------------------------------
--- تفعيل | Toggle أزرار
+-- Toggle أزرار في تبويب تفعيل
 ----------------------------------------------------------------
 local RunService = game:GetService("RunService")
 
@@ -135,7 +138,7 @@ Tab_Taf3eel:AddToggle({
 			local back=2
 			local desired = tHRP.Position - tHRP.CFrame.LookVector*back
 			lHRP.CFrame = CFrame.lookAt(desired, desired + tHRP.CFrame.LookVector)
-			-- تحرك اللاعب المحدد أمام وخلف
+			-- حركة أمام/خلف 5م للاعب المحدد
 			local s = math.sin(tick()*5)
 			tHRP.CFrame = tHRP.CFrame * CFrame.new(0,0,s*10*dt)
 		end)
@@ -146,7 +149,7 @@ Tab_Taf3eel:AddToggle({
 -- Teleport للاعب المحدد (زر عادي)
 ----------------------------------------------------------------
 Tab_Taf3eel:AddButton({
-	Name="Teleport للاعب المحدد",
+	Name="Teleport",
 	Callback=function()
 		local lp=game.Players.LocalPlayer
 		if SelectedPlayer and lp.Character and SelectedPlayer.Character then
