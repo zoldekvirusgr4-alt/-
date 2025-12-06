@@ -10,7 +10,7 @@ local Window = OrionLib:MakeWindow({
 	IntroText = "Astrot Script"
 })
 
--- Tabs
+-- Tabs الأصلية المطلوبة
 local Tab_Taf3eel = Window:MakeTab({Name="تفعيل", Icon="rbxassetid://4483345998"})
 local Tab_Hathf   = Window:MakeTab({Name="حذف اشياء", Icon="rbxassetid://4483345998"})
 local Tab_TahakomBnas = Window:MakeTab({Name="تحكم بناس", Icon="rbxassetid://4483345998"})
@@ -48,7 +48,7 @@ Tab_Intiqal:AddButton({Name="ورا البيت", Callback=function()TeleportTo(-
 Tab_Intiqal:AddButton({Name="قدام لوحه وقت لاعبين", Callback=function()TeleportTo(-619.49,-9.08,485.11)end})
 
 ----------------------------------------------------------------
--- تفعيل | اختيار لاعب بالاسم الجزئي
+-- اختيار لاعب بالاسم الجزئي
 ----------------------------------------------------------------
 local SelectedPlayer = nil
 local function FindByPartial(name)
@@ -120,7 +120,7 @@ Tab_Taf3eel:AddToggle({
 	end
 })
 
--- AST Toggle (ملاحقة + اتجاه نظر مطابق)
+-- AST Toggle
 local ASTConn=nil
 Tab_Taf3eel:AddToggle({
 	Name="AST",
@@ -134,11 +134,9 @@ Tab_Taf3eel:AddToggle({
 		local lHRP=lp.Character:WaitForChild("HumanoidRootPart")
 		ASTConn=RunService.RenderStepped:Connect(function(dt)
 			if not tHRP or not lHRP then return end
-			-- اتجاه النظر نفسه
 			local back=2
 			local desired = tHRP.Position - tHRP.CFrame.LookVector*back
 			lHRP.CFrame = CFrame.lookAt(desired, desired + tHRP.CFrame.LookVector)
-			-- حركة أمام/خلف 5م للاعب المحدد
 			local s = math.sin(tick()*5)
 			tHRP.CFrame = tHRP.CFrame * CFrame.new(0,0,s*10*dt)
 		end)
