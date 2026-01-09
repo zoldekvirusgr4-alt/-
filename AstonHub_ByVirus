@@ -1,0 +1,806 @@
+-- LocalScript ضعه في StarterPlayerScripts أو في أي مكان مناسب
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local SG = game:GetService("StarterGui")
+
+local screenGui = playerGui:FindFirstChild("AstonBar")
+
+if not screenGui then
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "AstonBar"
+    screenGui.ResetOnSpawn = false  -- **هذا الأهم**
+    screenGui.Parent = playerGui
+    
+    print("✅ تم إنشاء الواجهة الجديدة")
+else
+    print("🔄 الواجهة موجودة مسبقاً (لا داعي لإعادة الإنشاء)")
+    -- هنا تقدر تظهر إشعار إنه النظام مشغّل مسبقاً
+    SG:SetCore("SendNotification", {
+        Title = "Aston Script",
+        Text = "النظام مشغّل مسبقاً ✓",
+        Duration = 3
+    })
+    return 
+end
+
+SG:SetCore("SendNotification",{
+    Title = "Aston Hub",
+    Text = "سكربت فيروس الاصلي Aston Hub",
+    Duration = 5
+})
+-- ============================================
+-- نظام التبديل (Toggle System)
+-- ============================================
+local ToggleService = {}
+
+ToggleService.Colors = {
+    Enabled = Color3.fromRGB(80, 200, 80),
+    Disabled = Color3.fromRGB(50, 50, 60),
+    TextEnabled = Color3.fromRGB(255, 255, 255),
+    TextDisabled = Color3.fromRGB(180, 180, 180)
+}
+
+function ToggleService.CreateToggleButton(buttonName, displayName, defaultState, callback)
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = buttonName
+    buttonFrame.BackgroundColor3 = defaultState and ToggleService.Colors.Enabled or ToggleService.Colors.Disabled
+    buttonFrame.BackgroundTransparency = 0.2
+    buttonFrame.Size = UDim2.new(0.92, 0, 0, 45)
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.1, 0)
+    btnCorner.Parent = buttonFrame
+    
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.Color = Color3.fromRGB(100, 100, 100)
+    uiStroke.Thickness = 1.5
+    uiStroke.Transparency = 0.5
+    uiStroke.Parent = buttonFrame
+    
+    local buttonText = Instance.new("TextButton")
+    buttonText.Name = "ButtonText"
+    buttonText.Text = displayName .. (defaultState and " - تم تفعيل ✅" or " - غير مفعل")
+    buttonText.TextColor3 = defaultState and ToggleService.Colors.TextEnabled or ToggleService.Colors.TextDisabled
+    buttonText.TextSize = 16
+    buttonText.Font = Enum.Font.GothamBold
+    buttonText.BackgroundTransparency = 1
+    buttonText.Size = UDim2.new(1, 0, 1, 0)
+    buttonText.TextWrapped = true
+    buttonText.Parent = buttonFrame
+    
+    local isEnabled = defaultState
+    
+    buttonText.MouseEnter:Connect(function()
+        if not isEnabled then
+            buttonFrame.BackgroundTransparency = 0.1
+            uiStroke.Transparency = 0.3
+        end
+    end)
+    
+    buttonText.MouseLeave:Connect(function()
+        if not isEnabled then
+            buttonFrame.BackgroundTransparency = 0.2
+            uiStroke.Transparency = 0.5
+        end
+    end)
+    
+    local function toggleState()
+        isEnabled = not isEnabled
+        
+        if isEnabled then
+            buttonFrame.BackgroundColor3 = ToggleService.Colors.Enabled
+            buttonText.TextColor3 = ToggleService.Colors.TextEnabled
+            buttonText.Text = displayName .. " - تم تفعيل ✅"
+            
+            local originalSize = buttonFrame.Size
+            buttonFrame.Size = UDim2.new(0.91, 0, 0, 43)
+            task.wait(0.08)
+            buttonFrame.Size = originalSize
+            
+            uiStroke.Color = Color3.fromRGB(60, 180, 60)
+            uiStroke.Transparency = 0.3
+            
+            print("✅ تم تفعيل: " .. displayName)
+        else
+            buttonFrame.BackgroundColor3 = ToggleService.Colors.Disabled
+            buttonText.TextColor3 = ToggleService.Colors.TextDisabled
+            buttonText.Text = displayName .. " - غير مفعل"
+            
+            uiStroke.Color = Color3.fromRGB(100, 100, 100)
+            uiStroke.Transparency = 0.5
+            
+            print("❌ تم إلغاء: " .. displayName)
+        end
+        
+        if callback then
+            callback(isEnabled)
+        end
+    end
+    
+    buttonText.MouseButton1Click:Connect(toggleState)
+    
+    local toggleController = {
+        Frame = buttonFrame,
+        Text = buttonText,
+        IsEnabled = function() return isEnabled end,
+        Toggle = toggleState,
+        Enable = function()
+            if not isEnabled then toggleState() end
+        end,
+        Disable = function()
+            if isEnabled then toggleState() end
+        end
+    }
+    
+    return toggleController
+end
+
+-- ============================================
+-- إنشاء الواجهة الرئيسية
+-- ============================================
+
+-- الشريط الرئيسي
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainBar"
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+mainFrame.Size = UDim2.new(0.5, 0, 0.12, 0)
+mainFrame.Position = UDim2.new(0.25, 0, 0.02, 0)
+mainFrame.Parent = screenGui
+
+local cornerUi = Instance.new("UICorner")
+cornerUi.CornerRadius = UDim.new(0.25, 0)
+cornerUi.Parent = mainFrame
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Name = "Title"
+textLabel.Text = "Aston ثغرات"
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.TextSize = 20
+textLabel.Font = Enum.Font.GothamBold
+textLabel.BackgroundTransparency = 1
+textLabel.Size = UDim2.new(0.5, 0, 1, 0)
+textLabel.Position = UDim2.new(0.25, 0, 0, 0)
+textLabel.Parent = mainFrame
+
+local button = Instance.new("TextButton")
+button.Name = "_"
+button.Text = "_"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.TextSize = 24
+button.Font = Enum.Font.GothamBold
+button.BackgroundColor3 = Color3.fromRGB(75, 75, 85)
+button.Size = UDim2.new(0.1, 0, 0.8, 0)
+button.Position = UDim2.new(0.88, 0, 0.1, 0)
+button.Parent = mainFrame
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0.2, 0)
+buttonCorner.Parent = button
+
+-- DropFrame
+local dropFrame = Instance.new("Frame")
+dropFrame.Name = "DropFrame"
+dropFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+dropFrame.BackgroundTransparency = 0.15
+dropFrame.Size = UDim2.new(0.5, 0, 0.5, 0)
+dropFrame.Position = UDim2.new(0.25, 0, -0.55, 0)
+dropFrame.Visible = false
+dropFrame.Parent = screenGui
+
+local dropCorner = Instance.new("UICorner")
+dropCorner.CornerRadius = UDim.new(0.15, 0)
+dropCorner.Parent = dropFrame
+
+-- ScrollingFrame
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Name = "ContentScroll"
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.Size = UDim2.new(0.95, 0, 0.85, 0)
+scrollingFrame.Position = UDim2.new(0.025, 0, 0.12, 0)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120)
+scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+scrollingFrame.VerticalScrollBarInset = Enum.ScrollBarInset.Always
+scrollingFrame.Parent = dropFrame
+
+-- Container Frame
+local containerFrame = Instance.new("Frame")
+containerFrame.Name = "Container"
+containerFrame.BackgroundTransparency = 1
+containerFrame.Size = UDim2.new(1, 0, 1, 0)
+containerFrame.Parent = scrollingFrame
+
+local contentLayout = Instance.new("UIListLayout")
+contentLayout.Padding = UDim.new(0, 8)
+contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+contentLayout.Parent = containerFrame
+
+local padding = Instance.new("UIPadding")
+padding.PaddingTop = UDim.new(0, 5)
+padding.PaddingBottom = UDim.new(0, 10)
+padding.Parent = containerFrame
+
+-- ============================================
+-- المتغيرات العامة
+-- ============================================
+local antiAfkEnabled = false
+local antiKickEnabled = false
+local antiLagEnabled = false
+local accessoriesRemoved = false
+local antiSitEnabled = false
+local noFogEnabled = false
+local uptimateAfkEnabled = false
+
+local originalAccessories = {}
+local originalFogProperties = {}
+local antiAfkConnection = nil
+local antiKickConnection = nil
+local fpsPingConnection = nil
+local uptimateAfkConnection = nil
+local fpsFrame = nil
+local pingFrame = nil
+local uptimateFrame = nil
+
+-- ============================================
+-- إنشاء الأزرار باستخدام نظام التبديل
+-- ============================================
+
+-- زر 1: AntiAFK
+local antiAfkToggle = ToggleService.CreateToggleButton("AntiAFKButton", "AntiAFK", false, function(isEnabled)
+    antiAfkEnabled = isEnabled
+    
+    if isEnabled then
+        antiAfkConnection = RunService.Heartbeat:Connect(function()
+            local character = player.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid:Move(Vector3.new(0, 0, 0))
+                end
+            end
+        end)
+        print("🟢 AntiAFK مفعل - منع طرد الـ Idle")
+    else
+        if antiAfkConnection then
+            antiAfkConnection:Disconnect()
+            antiAfkConnection = nil
+        end
+        print("🔴 AntiAFK غير مفعل")
+    end
+end)
+antiAfkToggle.Frame.Parent = containerFrame
+antiAfkToggle.Frame.LayoutOrder = 1
+
+-- زر 2: AntiKick
+local antiKickToggle = ToggleService.CreateToggleButton("AntiKickButton", "AntiKick", false, function(isEnabled)
+    antiKickEnabled = isEnabled
+    
+    if isEnabled then
+        antiKickConnection = game:GetService("ScriptContext").Error:Connect(function(message)
+            if string.find(message:lower(), "kick") or string.find(message:lower(), "disconnect") then
+                print("⚠️ تم منع محاولة طرد")
+                return true
+            end
+        end)
+        print("🟢 AntiKick مفعل - منع أنواع الطرد")
+    else
+        if antiKickConnection then
+            antiKickConnection:Disconnect()
+            antiKickConnection = nil
+        end
+        print("🔴 AntiKick غير مفعل")
+    end
+end)
+antiKickToggle.Frame.Parent = containerFrame
+antiKickToggle.Frame.LayoutOrder = 2
+
+-- زر 3: AntiLag
+local antiLagToggle = ToggleService.CreateToggleButton("AntiLagButton", "AntiLag", false, function(isEnabled)
+    antiLagEnabled = isEnabled
+    
+    if isEnabled then
+        settings().Rendering.QualityLevel = 1
+        settings().Rendering.MeshCacheSize = 50
+        
+        if Lighting:FindFirstChild("Sky") then
+            Lighting.Sky:Destroy()
+        end
+        print("🟢 AntiLag مفعل - تقليل التقطيع")
+    else
+        settings().Rendering.QualityLevel = 10
+        settings().Rendering.MeshCacheSize = 100
+        print("🔴 AntiLag غير مفعل")
+    end
+end)
+antiLagToggle.Frame.Parent = containerFrame
+antiLagToggle.Frame.LayoutOrder = 3
+
+-- زر 4: إزالة الإكسسوارات (زر عادي بدون toggle)
+local function createAccessoriesButton()
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "AccessoriesButton"
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 40)
+    buttonFrame.BackgroundTransparency = 0.2
+    buttonFrame.Size = UDim2.new(0.92, 0, 0, 45)
+    buttonFrame.LayoutOrder = 4
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.1, 0)
+    btnCorner.Parent = buttonFrame
+    
+    local buttonText = Instance.new("TextButton")
+    buttonText.Name = "ButtonText"
+    buttonText.Text = "إزالة الإكسسوارات"
+    buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    buttonText.TextSize = 16
+    buttonText.Font = Enum.Font.GothamBold
+    buttonText.BackgroundTransparency = 1
+    buttonText.Size = UDim2.new(1, 0, 1, 0)
+    buttonText.TextWrapped = true
+    buttonText.Parent = buttonFrame
+    
+    buttonText.MouseButton1Click:Connect(function()
+        accessoriesRemoved = not accessoriesRemoved
+        
+        if accessoriesRemoved then
+            buttonText.Text = "إرجاع الإكسسوارات"
+            buttonText.TextColor3 = Color3.fromRGB(255, 200, 100)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(80, 80, 60)
+            
+            for _, otherPlayer in ipairs(Players:GetPlayers()) do
+                local character = otherPlayer.Character
+                if character then
+                    for _, accessory in ipairs(character:GetChildren()) do
+                        if accessory:IsA("Accessory") then
+                            originalAccessories[accessory] = accessory:Clone()
+                            accessory:Destroy()
+                        end
+                    end
+                end
+            end
+            print("🗑️ تم حذف إكسسوارات جميع اللاعبين")
+        else
+            buttonText.Text = "إزالة الإكسسوارات"
+            buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 40)
+            
+            for accessory, original in pairs(originalAccessories) do
+                for _, otherPlayer in ipairs(Players:GetPlayers()) do
+                    local character = otherPlayer.Character
+                    if character then
+                        local newAccessory = original:Clone()
+                        newAccessory.Parent = character
+                    end
+                end
+            end
+            originalAccessories = {}
+            print("↩️ تم إرجاع الإكسسوارات")
+        end
+    end)
+    
+    buttonFrame.Parent = containerFrame
+end
+
+createAccessoriesButton()
+
+-- زر 5: AntiSit
+local antiSitToggle = ToggleService.CreateToggleButton("AntiSitButton", "AntiSit", false, function(isEnabled)
+    antiSitEnabled = isEnabled
+    
+    if isEnabled then
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.Sit = false
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            end
+            
+            for _, seat in ipairs(workspace:GetDescendants()) do
+                if seat:IsA("Seat") or seat:IsA("VehicleSeat") then
+                    seat:Destroy()
+                end
+            end
+        end
+        print("🟢 AntiSit مفعل - منع الجلوس")
+    else
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+            end
+        end
+        print("🔴 AntiSit غير مفعل")
+    end
+end)
+antiSitToggle.Frame.Parent = containerFrame
+antiSitToggle.Frame.LayoutOrder = 5
+
+-- زر 6: عرض FPS (زر عادي)
+local function createFPSButton()
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "FPSButton"
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 40, 60)
+    buttonFrame.BackgroundTransparency = 0.2
+    buttonFrame.Size = UDim2.new(0.92, 0, 0, 45)
+    buttonFrame.LayoutOrder = 6
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.1, 0)
+    btnCorner.Parent = buttonFrame
+    
+    local buttonText = Instance.new("TextButton")
+    buttonText.Name = "ButtonText"
+    buttonText.Text = "عرض FPS - غير مفعل"
+    buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    buttonText.TextSize = 16
+    buttonText.Font = Enum.Font.GothamBold
+    buttonText.BackgroundTransparency = 1
+    buttonText.Size = UDim2.new(1, 0, 1, 0)
+    buttonText.TextWrapped = true
+    buttonText.Parent = buttonFrame
+    
+    buttonText.MouseButton1Click:Connect(function()
+        if fpsFrame then
+            fpsFrame:Destroy()
+            fpsFrame = nil
+            if not pingFrame then fpsPingConnection = nil end
+            buttonText.Text = "عرض FPS - غير مفعل"
+            buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(60, 40, 60)
+        else
+            fpsFrame = Instance.new("Frame")
+            fpsFrame.Name = "FPSDisplay"
+            fpsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+            fpsFrame.BackgroundTransparency = 0.3
+            fpsFrame.Size = UDim2.new(0.15, 0, 0.05, 0)
+            fpsFrame.Position = UDim2.new(0.82, 0, 0.02, 0)
+            fpsFrame.Parent = screenGui
+            
+            local fpsCorner = Instance.new("UICorner")
+            fpsCorner.CornerRadius = UDim.new(0.2, 0)
+            fpsCorner.Parent = fpsFrame
+            
+            local fpsLabel = Instance.new("TextLabel")
+            fpsLabel.Name = "FPSText"
+            fpsLabel.Text = "FPS: 60"
+            fpsLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            fpsLabel.TextSize = 14
+            fpsLabel.Font = Enum.Font.GothamBold
+            fpsLabel.BackgroundTransparency = 1
+            fpsLabel.Size = UDim2.new(1, 0, 1, 0)
+            fpsLabel.Parent = fpsFrame
+            
+            local lastTime = tick()
+            local frames = 0
+            
+            if not fpsPingConnection then
+                fpsPingConnection = RunService.Heartbeat:Connect(function()
+                    frames = frames + 1
+                    local currentTime = tick()
+                    
+                    if currentTime - lastTime >= 0.5 then
+                        local fps = math.floor(frames / (currentTime - lastTime))
+                        frames = 0
+                        lastTime = currentTime
+                        
+                        fpsLabel.Text = "FPS: " .. fps
+                        
+                        if fps >= 60 then
+                            fpsLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                        elseif fps >= 30 then
+                            fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+                        else
+                            fpsLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                        end
+                    end
+                end)
+            end
+            
+            buttonText.Text = "إخفاء FPS - مفعل"
+            buttonText.TextColor3 = Color3.fromRGB(100, 255, 100)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(80, 60, 80)
+            print("📊 عرض FPS مفعل")
+        end
+    end)
+    
+    buttonFrame.Parent = containerFrame
+end
+
+createFPSButton()
+
+-- زر 7: عرض Ping (زر عادي)
+local function createPingButton()
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "PingButton"
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(40, 60, 60)
+    buttonFrame.BackgroundTransparency = 0.2
+    buttonFrame.Size = UDim2.new(0.92, 0, 0, 45)
+    buttonFrame.LayoutOrder = 7
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.1, 0)
+    btnCorner.Parent = buttonFrame
+    
+    local buttonText = Instance.new("TextButton")
+    buttonText.Name = "ButtonText"
+    buttonText.Text = "عرض Ping - غير مفعل"
+    buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    buttonText.TextSize = 16
+    buttonText.Font = Enum.Font.GothamBold
+    buttonText.BackgroundTransparency = 1
+    buttonText.Size = UDim2.new(1, 0, 1, 0)
+    buttonText.TextWrapped = true
+    buttonText.Parent = buttonFrame
+    
+    buttonText.MouseButton1Click:Connect(function()
+        if pingFrame then
+            pingFrame:Destroy()
+            pingFrame = nil
+            if not fpsFrame then fpsPingConnection = nil end
+            buttonText.Text = "عرض Ping - غير مفعل"
+            buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(40, 60, 60)
+        else
+            pingFrame = Instance.new("Frame")
+            pingFrame.Name = "PingDisplay"
+            pingFrame.BackgroundColor3 = Color3.fromRGB(20, 30, 30)
+            pingFrame.BackgroundTransparency = 0.3
+            pingFrame.Size = UDim2.new(0.15, 0, 0.05, 0)
+            pingFrame.Position = UDim2.new(0.82, 0, 0.08, 0)
+            pingFrame.Parent = screenGui
+            
+            local pingCorner = Instance.new("UICorner")
+            pingCorner.CornerRadius = UDim.new(0.2, 0)
+            pingCorner.Parent = pingFrame
+            
+            local pingLabel = Instance.new("TextLabel")
+            pingLabel.Name = "PingText"
+            pingLabel.Text = "Ping: 0ms"
+            pingLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+            pingLabel.TextSize = 14
+            pingLabel.Font = Enum.Font.GothamBold
+            pingLabel.BackgroundTransparency = 1
+            pingLabel.Size = UDim2.new(1, 0, 1, 0)
+            pingLabel.Parent = pingFrame
+            
+            if not fpsPingConnection then
+                local lastUpdate = tick()
+                fpsPingConnection = RunService.Heartbeat:Connect(function()
+                    if tick() - lastUpdate >= 0.5 then
+                        local stats = game:GetService("Stats")
+                        local ping = stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+                        pingLabel.Text = "Ping: " .. math.floor(ping) .. "ms"
+                        
+                        if ping < 100 then
+                            pingLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                        elseif ping < 200 then
+                            pingLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+                        else
+                            pingLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                        end
+                        
+                        lastUpdate = tick()
+                    end
+                end)
+            end
+            
+            buttonText.Text = "إخفاء Ping - مفعل"
+            buttonText.TextColor3 = Color3.fromRGB(100, 200, 255)
+            buttonFrame.BackgroundColor3 = Color3.fromRGB(50, 80, 80)
+            print("📶 عرض Ping مفعل")
+        end
+    end)
+    
+    buttonFrame.Parent = containerFrame
+end
+
+createPingButton()
+
+-- زر 8: NoFog
+local noFogToggle = ToggleService.CreateToggleButton("NoFogButton", "NoFog", false, function(isEnabled)
+    noFogEnabled = isEnabled
+    
+    if isEnabled then
+        originalFogProperties = {
+            FogStart = Lighting.FogStart,
+            FogEnd = Lighting.FogEnd,
+            FogColor = Lighting.FogColor
+        }
+        
+        Lighting.FogStart = 1000000
+        Lighting.FogEnd = 1000000
+        print("🟢 NoFog مفعل - إزالة الضباب")
+    else
+        if originalFogProperties.FogStart then
+            Lighting.FogStart = originalFogProperties.FogStart
+            Lighting.FogEnd = originalFogProperties.FogEnd
+            Lighting.FogColor = originalFogProperties.FogColor
+        end
+        print("🔴 NoFog غير مفعل")
+    end
+end)
+noFogToggle.Frame.Parent = containerFrame
+noFogToggle.Frame.LayoutOrder = 8
+
+-- زر 9: Uptimate AFK
+local uptimateToggle = ToggleService.CreateToggleButton("UptimateAfkButton", "Uptimate AFK", false, function(isEnabled)
+    uptimateAfkEnabled = isEnabled
+    
+    if isEnabled then
+        uptimateFrame = Instance.new("Frame")
+        uptimateFrame.Name = "UptimateDisplay"
+        uptimateFrame.BackgroundColor3 = Color3.fromRGB(30, 20, 40)
+        uptimateFrame.BackgroundTransparency = 0.3
+        uptimateFrame.Size = UDim2.new(0.15, 0, 0.05, 0)
+        uptimateFrame.Position = UDim2.new(0.82, 0, 0.14, 0)
+        uptimateFrame.Parent = screenGui
+        
+        local uptimateCorner = Instance.new("UICorner")
+        uptimateCorner.CornerRadius = UDim.new(0.2, 0)
+        uptimateCorner.Parent = uptimateFrame
+        
+        local uptimateLabel = Instance.new("TextLabel")
+        uptimateLabel.Name = "UptimateText"
+        uptimateLabel.Text = "الوقت: 00:00:00"
+        uptimateLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        uptimateLabel.TextSize = 12
+        uptimateLabel.Font = Enum.Font.GothamBold
+        uptimateLabel.BackgroundTransparency = 1
+        uptimateLabel.Size = UDim2.new(1, 0, 1, 0)
+        uptimateLabel.Parent = uptimateFrame
+        
+        local startTime = tick()
+        
+        uptimateAfkConnection = RunService.Heartbeat:Connect(function()
+            local elapsed = tick() - startTime
+            
+            local days = math.floor(elapsed / 86400)
+            local hours = math.floor((elapsed % 86400) / 3600)
+            local minutes = math.floor((elapsed % 3600) / 60)
+            local seconds = math.floor(elapsed % 60)
+            
+            local timeString = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+            if days > 0 then
+                timeString = days .. " يوم " .. timeString
+            end
+            
+            uptimateLabel.Text = "الوقت: " .. timeString
+        end)
+        
+        print("⏰ Uptimate AFK مفعل - بدأ العد")
+    else
+        if uptimateAfkConnection then
+            uptimateAfkConnection:Disconnect()
+            uptimateAfkConnection = nil
+        end
+        
+        if uptimateFrame then
+            uptimateFrame:Destroy()
+            uptimateFrame = nil
+        end
+        print("🔴 Uptimate AFK غير مفعل")
+    end
+end)
+uptimateToggle.Frame.Parent = containerFrame
+uptimateToggle.Frame.LayoutOrder = 9
+
+-- زر 10: Reset (زر عادي)
+local function createResetButton()
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Name = "ResetButton"
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(70, 40, 40)
+    buttonFrame.BackgroundTransparency = 0.2
+    buttonFrame.Size = UDim2.new(0.92, 0, 0, 45)
+    buttonFrame.LayoutOrder = 10
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.1, 0)
+    btnCorner.Parent = buttonFrame
+    
+    local buttonText = Instance.new("TextButton")
+    buttonText.Name = "ButtonText"
+    buttonText.Text = "إعادة Respawn سريعة"
+    buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    buttonText.TextSize = 16
+    buttonText.Font = Enum.Font.GothamBold
+    buttonText.BackgroundTransparency = 1
+    buttonText.Size = UDim2.new(1, 0, 1, 0)
+    buttonText.TextWrapped = true
+    buttonText.Parent = buttonFrame
+    
+    buttonText.MouseButton1Click:Connect(function()
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                buttonText.Text = "جارٍ Respawn..."
+                buttonText.TextColor3 = Color3.fromRGB(255, 100, 100)
+                buttonFrame.BackgroundColor3 = Color3.fromRGB(90, 50, 50)
+                
+                humanoid.Health = 0
+                
+                task.wait(1.5)
+                buttonText.Text = "إعادة Respawn سريعة"
+                buttonText.TextColor3 = Color3.fromRGB(220, 220, 220)
+                buttonFrame.BackgroundColor3 = Color3.fromRGB(70, 40, 40)
+                print("🔄 تم إعادة Respawn سريعة")
+            end
+        end
+    end)
+    
+    buttonFrame.Parent = containerFrame
+end
+
+createResetButton()
+
+-- ============================================
+-- إعدادات الـ ScrollingFrame
+-- ============================================
+local function updateCanvasSize()
+    task.wait(0.1)
+    
+    local totalHeight = 0
+    local buttonCount = 0
+    
+    for _, child in ipairs(containerFrame:GetChildren()) do
+        if child:IsA("Frame") and child.Name ~= "UIPadding" then
+            totalHeight = totalHeight + child.AbsoluteSize.Y + contentLayout.Padding.Offset
+            buttonCount = buttonCount + 1
+        end
+    end
+    
+    local extraPadding = 20
+    local calculatedHeight = totalHeight + extraPadding
+    
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, calculatedHeight)
+end
+
+contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+task.wait(0.2)
+updateCanvasSize()
+
+-- ============================================
+-- وظائف التحريك
+-- ============================================
+local isDropOpen = false
+
+local function toggleDropFrame()
+    if isDropOpen then
+        local tweenClose = TweenService:Create(dropFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            Position = UDim2.new(0.25, 0, -0.55, 0)
+        })
+        tweenClose:Play()
+        tweenClose.Completed:Connect(function()
+            dropFrame.Visible = false
+        end)
+    else
+        dropFrame.Visible = true
+        local tweenOpen = TweenService:Create(dropFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.25, 0, 0.14, 0)
+        })
+        tweenOpen:Play()
+    end
+    isDropOpen = not isDropOpen
+end
+
+button.MouseButton1Click:Connect(toggleDropFrame)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.Escape and isDropOpen then
+        toggleDropFrame()
+    end
+end)
+print("Started")
