@@ -1,0 +1,102 @@
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local workspace = game:GetService("Workspace")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local starterPack = game:GetService("StarterPack")
+
+local ignoredTools = {"لوحه", "groupCuff"}
+
+local function isIgnoredTool(toolName)
+    for _, ignoredName in ipairs(ignoredTools) do
+        if toolName == ignoredName then
+            return true
+        end
+    end
+    return false
+end
+
+local function findToolsEverywhere()
+    local tools = {}
+    
+    local localBackpack = localPlayer:FindFirstChild("Backpack")
+    if localBackpack then
+        for _, item in ipairs(localBackpack:GetChildren()) do
+            if item:IsA("Tool") and not isIgnoredTool(item.Name) then
+                table.insert(tools, item)
+            end
+        end
+    end
+    
+    local character = localPlayer.Character
+    if character then
+        for _, item in ipairs(character:GetChildren()) do
+            if item:IsA("Tool") and not isIgnoredTool(item.Name) then
+                table.insert(tools, item)
+            end
+        end
+    end
+    
+    for _, player in ipairs(players:GetPlayers()) do
+        if player ~= localPlayer then
+            local backpack = player:FindFirstChild("Backpack")
+            if backpack then
+                for _, item in ipairs(backpack:GetChildren()) do
+                    if item:IsA("Tool") and not isIgnoredTool(item.Name) then
+                        table.insert(tools, item)
+                    end
+                end
+            end
+            
+            local otherChar = player.Character
+            if otherChar then
+                for _, item in ipairs(otherChar:GetChildren()) do
+                    if item:IsA("Tool") and not isIgnoredTool(item.Name) then
+                        table.insert(tools, item)
+                    end
+                end
+            end
+        end
+    end
+    
+    local function searchInContainer(container, depth)
+        if not container then return end
+        
+        for _, item in ipairs(container:GetChildren()) do
+            if item:IsA("Tool") and not isIgnoredTool(item.Name) then
+                table.insert(tools, item)
+            else
+                if depth < 10 then
+                    searchInContainer(item, depth + 1)
+                end
+            end
+        end
+    end
+    
+    searchInContainer(workspace, 0)
+    searchInContainer(replicatedStorage, 0)
+    searchInContainer(starterPack, 0)
+    
+    return tools
+end
+
+local function collectToolsToLocalPlayer()
+    local backpack = localPlayer:FindFirstChild("Backpack")
+    if not backpack then
+        return
+    end
+    
+    local tools = findToolsEverywhere()
+    
+    for _, tool in ipairs(tools) do
+        if tool.Parent ~= backpack and tool.Parent ~= localPlayer.Character then
+            tool.Parent = backpack
+        end
+    end
+end
+
+while true do
+    if localPlayer.Character then
+        collectToolsToLocalPlayer()
+    end
+    wait(0.5)
+end
